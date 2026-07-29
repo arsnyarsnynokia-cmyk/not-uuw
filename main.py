@@ -4,8 +4,8 @@ from telebot import types
 
 # Считываем переменные из окружения облака
 TOKEN = os.environ.get('BOT_TOKEN')
-# ID администратора (считываем из переменных или ставим 0 по умолчанию)
 ADMIN_ID = 7771113861
+
 bot = telebot.TeleBot(TOKEN)
 
 
@@ -31,9 +31,9 @@ def send_welcome(message):
   user = message.from_user
   notify_admin(user, "Запустил бота (/start)")
 
-  # Создаем Inline-кнопки со ссылками
   markup = types.InlineKeyboardMarkup(row_width=1)
 
+  # Кнопки-ссылки
   btn_ref = types.InlineKeyboardButton(
       text="💳 Оформить бизнес-карту", url="https://vt.tiktok.com/ZS4eNAsBS/"
   )
@@ -41,7 +41,12 @@ def send_welcome(message):
       text="💬 Связаться с нами", url="https://t.me/livernu_colbas"
   )
 
-  markup.add(btn_ref, btn_contact)
+  # Новая кнопка с передачей данных (callback)
+  btn_done = types.InlineKeyboardButton(
+      text="✅ Карта оформлена", callback_data="card_done"
+  )
+
+  markup.add(btn_ref, btn_done, btn_contact)
 
   welcome_text = (
       f"Привет, {user.first_name}! 👋\n\n"
@@ -56,7 +61,26 @@ def send_welcome(message):
   )
 
 
-# 2. Обработка команды /help
+# 2. Обработка нажатия на кнопку «Карта оформлена»
+@bot.callback_query_handler(func=lambda call: call.data == "card_done")
+def handle_card_done(call):
+  user = call.from_user
+  notify_admin(user, "Нажал кнопку «Карта оформлена»")
+
+  # Всплывающее короткое уведомление для Telegram
+  bot.answer_callback_query(call.id)
+
+  response_text = (
+      "Отлично! Ваша заявка принята на проверку банком (она занимает от 14 до"
+      " 30 дней).\n\n"
+      "Пожалуйста, пришлите в ответ на это сообщение ваш номер телефона, который"
+      " вы указывали при оформлении, чтобы мы увидели вашу заявку."
+  )
+
+  bot.send_message(call.message.chat.id, response_text)
+
+
+# 3. Обработка команды /help
 @bot.message_handler(commands=['help'])
 def send_help(message):
   notify_admin(message.from_user, "Запросил раздел помощи (/help)")
@@ -81,18 +105,16 @@ def send_help(message):
   bot.send_message(message.chat.id, help_text, parse_mode="Markdown")
 
 
-# 3. Пересылка любых текстовых сообщений от пользователей
+# 4. Пересылка всех входящих сообщений (включая номера телефонов)
 @bot.message_handler(content_types=['text'])
 def handle_text(message):
   user = message.from_user
 
-  # Отправляем уведомление админу (если пишет не сам админ)
   if user.id != ADMIN_ID:
-    notify_admin(user, f"Написал сообщение: {message.text}")
+    notify_admin(user, f"Написал сообщение/номер: {message.text}")
     bot.reply_to(
         message,
-        "Ваше сообщение получено! Чтобы оформить карту или написать нам,"
-        " используйте меню в команде /start.",
+        "Ваши данные приняты! Мы проверим заявку и свяжемся с вами.",
     )
 
 
