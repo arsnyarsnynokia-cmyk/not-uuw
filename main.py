@@ -5,10 +5,7 @@ from telebot import types
 # Считываем переменные из окружения облака
 TOKEN = os.environ.get('BOT_TOKEN')
 # ID администратора (считываем из переменных или ставим 0 по умолчанию)
-ADMIN_ENV = os.environ.get('ADMIN_ID = 7771113861
-)
-ADMIN_ID = int(ADMIN_ENV) if ADMIN_ENV and ADMIN_ENV.isdigit() else 0
-
+ADMIN_ID = 7771113861
 bot = telebot.TeleBot(TOKEN)
 
 
